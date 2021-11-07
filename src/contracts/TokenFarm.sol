@@ -40,7 +40,28 @@ contract TokenFarm {
         hasStaked[msg.sender] = true;
     }
 
-    // 2. Issuing tokens (mint)
+    // 2. Unstaking tokens (withdraw)
+    function unstakeTokens(uint256 _amount) public {
+        // Fetching staking balance
+        uint256 balance = stakingBalance[msg.sender];
+
+        // Require balance greater than 0
+        require(balance > 0, "staking balance cannot be 0");
+
+        // Transfer Mock Dai tokens to this contract for staking
+        daiToken.transfer(msg.sender, balance);
+
+        // Update staking balance
+        stakingBalance[msg.sender] = stakingBalance[msg.sender] - _amount;
+
+        // Remove user from stakers array only if they have staked already
+        if (hasStaked[msg.sender] && stakingBalance[msg.sender] == 0) {
+            // Update staking status
+            isStaking[msg.sender] = false;
+        }
+    }
+
+    // 3. Issuing tokens (mint)
     function issueTokens(uint256 _amount) public {
         // Only owner can issue tokens
         require(msg.sender == owner, "Only owner can issue tokens");
@@ -60,6 +81,4 @@ contract TokenFarm {
             }
         }
     }
-
-    // 3. Unstaking tokens (withdraw)
 }
