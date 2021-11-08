@@ -26,4 +26,4 @@
 - [Video tutorial](https://www.youtube.com/watch?app=desktop&v=CgXQC4dbGUE)
 
 ## Further Inquiry
-> For further inquiry, call [Jedidiah](tel:+2348165972229)
+For further inquiry, call [Jedidiah](tel:+2348165972229)
