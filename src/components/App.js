@@ -4,6 +4,7 @@ import DaiToken from "../abis/DaiToken.json";
 import DappToken from "../abis/DappToken.json";
 import TokenFarm from "../abis/TokenFarm.json";
 import Navbar from "./Navbar";
+import Main from "./Main";
 import "./App.css";
 
 class App extends Component {
@@ -19,7 +20,6 @@ class App extends Component {
   };
 
   async loadWeb3() {
-
     if (window.ethereum) {
       window.web3 = new Web3(window.ethereum);
       try {
@@ -50,6 +50,7 @@ class App extends Component {
 
     const networkId = await web3.eth.net.getId();
 
+
     // Load DaiToken
     const daiTokenData = DaiToken.networks[networkId];
     if (daiTokenData) {
@@ -58,8 +59,11 @@ class App extends Component {
         daiTokenData.address
       );
       this.setState({ daiToken });
-      const daiTokenBalance = await daiToken.methods.balanceOf(accounts[0]).call();
-      this.setState({ daiTokenBalance: daiTokenBalance+"" });
+      const daiTokenBalance = await daiToken.methods
+        .balanceOf(accounts[0])
+        .call();
+      this.setState({ daiTokenBalance: (daiTokenBalance || 0) + "" });
+
     } else {
       window.alert("DaiToken contract not deployed to detected network.");
     }
@@ -72,25 +76,78 @@ class App extends Component {
         dappTokenData.address
       );
       this.setState({ dappToken });
-      const dappTokenBalance = await dappToken.methods.balanceOf(accounts[0]).call();
-      this.setState({ dappTokenBalance: dappTokenBalance+"" });
+      const dappTokenBalance = await dappToken.methods
+        .balanceOf(accounts[0])
+        .call();
+      this.setState({ dappTokenBalance: (dappTokenBalance || 0) + "" });
     } else {
       window.alert("DaiToken contract not deployed to detected network.");
     }
 
     // Load TokenFarm
     const tokenFarmData = TokenFarm.networks[networkId];
-    if(tokenFarmData) {
-      const tokenFarm = new web3.eth.Contract(TokenFarm.abi, tokenFarmData.address)
-      this.setState({tokenFarm})
-      let stakingBalance = await tokenFarm.methods.stakingBalance(accounts[0]).call();
-      this.setState({stakingBalance: stakingBalance+""})
+    if (tokenFarmData) {
+      const tokenFarm = new web3.eth.Contract(
+        TokenFarm.abi,
+        tokenFarmData.address
+      );
+      this.setState({ tokenFarm });
+      let stakingBalance = await tokenFarm.methods
+        .stakingBalance(accounts[0])
+        .call();
+      this.setState({ stakingBalance: (stakingBalance || 0) + "" });
     } else {
       window.alert("TokenFarm contract not deployed to detected network.");
     }
 
-    this.setState({loading: false})
+    this.setState({ loading: false });
   }
+
+  stakeTokens = (amount) => {
+    this.setState({ loading: true });
+    this.state.daiToken.methods
+      .approve(this.state.tokenFarm._address, amount)
+      .send({ from: this.state.account })
+      .on("transactionHash", (hash) => {
+        console.log(hash);
+      })
+      .on("receipt", (receipt) => {
+        console.log(receipt);
+        this.state.tokenFarm.methods
+          .stakeTokens(amount)
+          .send({ from: this.state.account })
+          .on("transactionHash", (hash) => {
+            console.log(hash);
+          })
+          .on("receipt", (receipt) => {
+            console.log(receipt);
+            this.setState({ loading: false });
+          });
+      });
+  };
+
+  unstakeTokens = (amount) => {
+    this.setState({ loading: true });
+    this.state.daiToken.methods
+      .approve(this.state.tokenFarm._address, amount)
+      .send({ from: this.state.account })
+      .on("transactionHash", (hash) => {
+        console.log(hash);
+      })
+      .on("receipt", (receipt) => {
+        console.log(receipt);
+        this.state.tokenFarm.methods
+          .unstakeTokens(amount)
+          .send({ from: this.state.account })
+          .on("transactionHash", (hash) => {
+            console.log(hash);
+          })
+          .on("receipt", (receipt) => {
+            console.log(receipt);
+            this.setState({ loading: false });
+          });
+      });
+  };
 
   componentDidMount() {
     this.loadWeb3();
@@ -98,6 +155,19 @@ class App extends Component {
   }
 
   render() {
+    const state = {
+      ...this.state,
+      stakeTokens: this.stakeTokens,
+      unstakeTokens: this.unstakeTokens,
+    };
+    const content = this.state.loading ? (
+      <p id="loader" className="text-center">
+        Loading Web3, accounts, and contract...
+      </p>
+    ) : (
+      <Main {...state} />
+    );
+
     return (
       <div>
         <Navbar account={this.state.account} />
@@ -108,12 +178,12 @@ class App extends Component {
               className="col-lg-12 ml-auto mr-auto"
               style={{ maxWidth: "600px" }}
             >
-              <div className="content mr-auto ml-auto">
-                <h1>Hello, World!</h1>
-              </div>
+              <div className="content mr-auto ml-auto">{content}</div>
             </main>
           </div>
         </div>
+
+        
       </div>
     );
   }

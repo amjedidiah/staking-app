@@ -42,14 +42,17 @@ contract TokenFarm {
 
     // 2. Unstaking tokens (withdraw)
     function unstakeTokens(uint256 _amount) public {
+        // Require amount greater than 0
+        require(_amount > 0, "amount cannot be 0");
+
         // Fetching staking balance
         uint256 balance = stakingBalance[msg.sender];
 
-        // Require balance greater than 0
-        require(balance > 0, "staking balance cannot be 0");
+        // Require amount less than or equal to balance
+        require(_amount < balance, "staking balance cannot be 0");
 
         // Transfer Mock Dai tokens to this contract for staking
-        daiToken.transfer(msg.sender, balance);
+        daiToken.transfer(msg.sender, _amount);
 
         // Update staking balance
         stakingBalance[msg.sender] = stakingBalance[msg.sender] - _amount;
@@ -62,7 +65,7 @@ contract TokenFarm {
     }
 
     // 3. Issuing tokens (mint)
-    function issueTokens(uint256 _amount) public {
+    function issueTokens() public {
         // Only owner can issue tokens
         require(msg.sender == owner, "Only owner can issue tokens");
 
@@ -72,12 +75,8 @@ contract TokenFarm {
             uint256 balance = stakingBalance[recipient];
 
             // Check if user has staked tokens
-            if (hasStaked[recipient]) {
-                // Check if user has enough staked tokens
-                if (balance >= _amount) {
-                    // Transfer staked tokens to user
-                    dappToken.transfer(recipient, balance);
-                }
+            if (balance > 0) {
+                dappToken.transfer(recipient, balance);
             }
         }
     }
